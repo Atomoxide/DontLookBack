@@ -8,6 +8,8 @@ using Dontlookback.Windows;
 using Dalamud.Game.ClientState.Objects.SubKinds;
 using DontLookBack;
 using FFXIVClientStructs.FFXIV.Client.Game.Object;
+using Dalamud.Game.Gui.Toast;
+using Dalamud.Hooking;
 
 namespace Dontlookback;
 
@@ -16,6 +18,9 @@ public sealed class Plugin : IDalamudPlugin
     [PluginService] internal static IDalamudPluginInterface PluginInterface { get; private set; } = null!;
     [PluginService] internal static ITextureProvider TextureProvider { get; private set; } = null!;
     [PluginService] internal static ICommandManager CommandManager { get; private set; } = null!;
+
+    [PluginService] internal static IChatGui Chat { get; private set; }
+    [PluginService] public static IToastGui Toasts { get; private set; }
 
     [PluginService] internal static IClientState ClientState { get; private set; } = null!;
 
@@ -27,13 +32,13 @@ public sealed class Plugin : IDalamudPlugin
 
     public bool valid;
 
-    public IPlayerCharacter? player;
+    public static IPlayerCharacter player { get; private set; } = null!;
 
     private const string CommandName = "/dlb";
 
     public Configuration Configuration { get; init; }
 
-    public readonly WindowSystem WindowSystem = new("SamplePlugin");
+    public readonly WindowSystem WindowSystem = new("Don't Look Back");
     private ConfigWindow ConfigWindow { get; init; }
     private MainWindow MainWindow { get; init; }
 
@@ -42,17 +47,17 @@ public sealed class Plugin : IDalamudPlugin
         Configuration = PluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
 
         // you might normally want to embed resources and load them from the manifest stream
-        var goatImagePath = Path.Combine(PluginInterface.AssemblyLocation.Directory?.FullName!, "goat.png");
+        var yoship = Path.Combine(PluginInterface.AssemblyLocation.Directory?.FullName!, "yoship.png");
 
         ConfigWindow = new ConfigWindow(this);
-        MainWindow = new MainWindow(this, goatImagePath);
+        MainWindow = new MainWindow(this, yoship);
 
         WindowSystem.AddWindow(ConfigWindow);
         WindowSystem.AddWindow(MainWindow);
 
         CommandManager.AddHandler(CommandName, new CommandInfo(OnCommand)
         {
-            HelpMessage = "A useful message to display in /xlhelp"
+            HelpMessage = "\n/dlb on: toggle on\n/dlb off: toggle off\n/dlb config: open config window"
         });
 
         PluginInterface.UiBuilder.Draw += DrawUI;
@@ -69,9 +74,15 @@ public sealed class Plugin : IDalamudPlugin
         Logger = logger;
         valid = false;
         currentDirection = 0f;
-        player = ClientState.LocalPlayer;
-        MoveFunction.Initialize(logger, player);
-        ActionCall.Initialize(player);
+        if (ClientState.LocalPlayer == null)
+        {
+            Logger.Error("Player not found!");
+            this.Dispose();
+            return;
+        }
+        player = ClientState.LocalPlayer!;
+        //MoveFunction.Initialize(logger, player);
+        ActionCall.Initialize();
     }
 
     public void Dispose()
@@ -89,23 +100,44 @@ public sealed class Plugin : IDalamudPlugin
     private unsafe void OnCommand(string command, string args)
     {
         // in response to the slash command, just toggle the display status of our main ui
-        
-        if (player == null)
-        {
-            Logger.Info("Player Null");
-        }
-        else
-        {
-            //GameObject* PlayerObj = (GameObject*)player.Address;
-            //Logger.Info("Player: " + (nint)PlayerObj);
-            //Logger.Info("Prev Direction: " + ActionCall.Instance.preDirection + ", Post Direction: " + ActionCall.Instance.postDirection);
-            //PlayerObj->Rotation = ActionCall.Instance.direction;
-            //MoveFunction.Instance.MoveObject(PlayerObj, (PlayerObj->Position.X)+0.1f, PlayerObj->Position.Y, PlayerObj->Position.Z);
-            //MoveFunction.Instance.Move();
-            //MoveFunction.Instance.TurnObject(PlayerObj, 0.0f);
 
+        //if (player == null)
+        //{
+        //    Logger.Info("Player Null");
+        //}
+        //else
+        //{
+        //    //GameObject* PlayerObj = (GameObject*)player.Address;
+        //    //Logger.Info("Player: " + (nint)PlayerObj);
+        //    //Logger.Info("Prev Direction: " + ActionCall.Instance.preDirection + ", Post Direction: " + ActionCall.Instance.postDirection);
+        //    //PlayerObj->Rotation = ActionCall.Instance.direction;
+        //    //MoveFunction.Instance.MoveObject(PlayerObj, (PlayerObj->Position.X)+0.1f, PlayerObj->Position.Y, PlayerObj->Position.Z);
+        //    //MoveFunction.Instance.Move();
+        //    //MoveFunction.Instance.TurnObject(PlayerObj, 0.0f);
+
+        //}
+        if (args == "on" && !Configuration.IsTurnedOn)
+        {
+            MoveFunction.Initialize();
+            Logger.Info("plugin turned on");
+            Chat.Print("[Don't Look Back] Turned on.");
+            Toasts.ShowQuest("Don't Look Back Turned on",
+                    new QuestToastOptions() { PlaySound = true, DisplayCheckmark = true });
+            Configuration.IsTurnedOn = true;
         }
-        //ToggleMainUI();
+        else if (args == "off" && Configuration.IsTurnedOn)
+        {
+            MoveFunction.Instance?.Dispose();
+            Logger.Info("plugin turned off");
+            Chat.Print("[Don't Look Back] Turned off");
+            Toasts.ShowQuest("Don't Look Back Turned off",
+                    new QuestToastOptions() { PlaySound = true, DisplayCheckmark = true });
+            Configuration.IsTurnedOn = false;
+        }
+        else if (args == "config")
+        {
+            ToggleConfigUI();
+        }
     }
 
     private void DrawUI() => WindowSystem.Draw();

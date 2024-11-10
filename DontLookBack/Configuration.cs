@@ -1,5 +1,8 @@
-﻿using Dalamud.Configuration;
+using Dalamud.Configuration;
+using Dalamud.Hooking;
 using Dalamud.Plugin;
+using Dontlookback;
+using DontLookBack;
 using System;
 
 namespace Dontlookback;
@@ -9,12 +12,21 @@ public class Configuration : IPluginConfiguration
 {
     public int Version { get; set; } = 0;
 
-    public bool IsConfigWindowMovable { get; set; } = true;
-    public bool SomePropertyToBeSavedAndWithADefault { get; set; } = true;
+    public bool IsTurnedOn { get; set; } = false;
 
-    // the below exist just to make saving less cumbersome
-    public void Save()
+    public void UpdateStatus()
     {
-        Plugin.PluginInterface.SavePluginConfig(this);
+        if (IsTurnedOn)
+        {
+            MoveFunction.Initialize();
+            Plugin.Logger.Info("plugin turned on");
+            Plugin.Chat.Print("[Don't Look Back] Turned on");
+        }
+        else if (!IsTurnedOn)
+        {
+            MoveFunction.Instance?.Dispose();
+            Plugin.Logger.Info("plugin turned off");
+            Plugin.Chat.Print("[Don't Look Back] Turned off");
+        }
     }
 }

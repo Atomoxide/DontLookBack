@@ -1,54 +1,52 @@
-﻿using System;
+using System;
 using System.Numerics;
 using Dalamud.Interface.Internal;
 using Dalamud.Interface.Utility;
 using Dalamud.Interface.Windowing;
 using Dalamud.Plugin.Services;
+using Dontlookback;
 using ImGuiNET;
 
 namespace Dontlookback.Windows;
 
 public class MainWindow : Window, IDisposable
 {
-    private string GoatImagePath;
+    //private string GoatImagePath;
     private Plugin Plugin;
+    private string yoshipPath;
 
     // We give this window a hidden ID using ##
     // So that the user will see "My Amazing Window" as window title,
     // but for ImGui the ID is "My Amazing Window##With a hidden ID"
-    public MainWindow(Plugin plugin, string goatImagePath)
-        : base("My Amazing Window##With a hidden ID", ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse)
+    public MainWindow(Plugin plugin, string cat)
+        : base("About##With a hidden ID", ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse | ImGuiWindowFlags.NoResize)
     {
-        SizeConstraints = new WindowSizeConstraints
-        {
-            MinimumSize = new Vector2(375, 330),
-            MaximumSize = new Vector2(float.MaxValue, float.MaxValue)
-        };
+        Size = new Vector2(375, 330);
+        SizeCondition = ImGuiCond.Always;
 
-        GoatImagePath = goatImagePath;
         Plugin = plugin;
+        yoshipPath = cat;
     }
 
     public void Dispose() { }
 
     public override void Draw()
     {
-        ImGui.Text($"The random config bool is {Plugin.Configuration.SomePropertyToBeSavedAndWithADefault}");
-
-        if (ImGui.Button("Show Settings"))
+        if (Plugin.Configuration.IsTurnedOn)
         {
-            Plugin.ToggleConfigUI();
+            ImGui.Text($"Don't Look Back is [ENABLED]");
+        }
+        else
+        {
+            ImGui.Text($"Don't Look Back is [DISABLED]");
         }
 
         ImGui.Spacing();
 
-        ImGui.Text("Have a goat:");
-        var goatImage = Plugin.TextureProvider.GetFromFile(GoatImagePath).GetWrapOrDefault();
-        if (goatImage != null)
+        var yoshipImg = Plugin.TextureProvider.GetFromFile(yoshipPath).GetWrapOrDefault();
+        if (yoshipImg != null)
         {
-            ImGuiHelpers.ScaledIndent(55f);
-            ImGui.Image(goatImage.ImGuiHandle, new Vector2(goatImage.Width, goatImage.Height));
-            ImGuiHelpers.ScaledIndent(-55f);
+            ImGui.Image(yoshipImg.ImGuiHandle, new Vector2(yoshipImg.Width / 2, yoshipImg.Height / 2));
         }
         else
         {

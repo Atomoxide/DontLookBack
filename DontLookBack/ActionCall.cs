@@ -16,14 +16,14 @@ namespace DontLookBack
         private delegate void OnActionUsedDelegate(uint sourceId, IntPtr sourceCharacter, IntPtr pos, IntPtr effectHeader, IntPtr effectArray, IntPtr effectTrail);
         private Hook<OnActionUsedDelegate>? onActionUsedHook;
 
-        public static void Initialize(IPlayerCharacter? player) { Instance = new ActionCall(player); }
+        public static void Initialize() { Instance = new ActionCall(); }
 
         public static ActionCall Instance { get; private set; } = null!;
 
         public float preDirection;
         public float postDirection;
-        private readonly IPlayerCharacter? player;
-        private ActionCall(IPlayerCharacter? player)
+        //private readonly IPlayerCharacter? player;
+        private ActionCall()
         {
             try
             {
@@ -45,7 +45,7 @@ namespace DontLookBack
             {
                 Plugin.Logger.Error("Error initiating OnloadingHitbox hooks: " + e.Message);
             }
-            this.player = player;
+            //this.player = player;
 
 
         }
@@ -88,8 +88,9 @@ namespace DontLookBack
             IntPtr effectArray, IntPtr effectTrail)
         {
             onActionUsedHook?.Original(sourceId, sourceCharacter, pos, effectHeader, effectArray, effectTrail);
-            IPlayerCharacter? player = Plugin.ClientState.LocalPlayer;
-            if (player == null || sourceId != player.GameObjectId) { return; }
+            //IPlayerCharacter? player = Plugin.ClientState.LocalPlayer;
+            //if (player == null || sourceId != player.GameObjectId) { return; }
+            if (sourceId != Plugin.player.GameObjectId) { return; }
 
             //MoveFunction.Instance.MoveObject((GameObject*)player.Address, preDirection);
             MoveFunction.Instance.Move();

@@ -21,8 +21,6 @@ namespace DontLookBack
         //private Hook<TurnObjectDelegate>? turnObjectHook;
         private delegate void MoveObjectDelegate(GameObject* gameObjectPtr, float x, float y, float z);
         
-        private IPluginLog logger;
-        private IPlayerCharacter? player;
         private float moveSum;
         public Matrix4x4 View;
 
@@ -34,8 +32,8 @@ namespace DontLookBack
 
         public static MoveFunction Instance { get; private set; } = null!;
 
-        public static void Initialize(IPluginLog logger, IPlayerCharacter? player) { Instance = new MoveFunction(logger, player); }
-        private MoveFunction(IPluginLog logger, IPlayerCharacter? player)
+        public static void Initialize() { Instance = new MoveFunction(); }
+        private MoveFunction()
         {
             Plugin.GameInteropProvider.InitializeFromAttributes(this);
             try
@@ -58,8 +56,8 @@ namespace DontLookBack
             {
                 Plugin.Logger.Error("Error initiating move function hooks: " + e.Message);
             }
-            this.logger = logger;
-            this.player = player;
+            //this.logger = logger;
+            //this.player = player;
             this.moveSum = 0.0f;
         }
 
@@ -109,7 +107,7 @@ namespace DontLookBack
                         return;
                     View = renderCamera->ViewMatrix;
                     var CameraAzimuth = MathF.Atan2(-View.M13, -View.M33);
-                    ((GameObject*)player!.Address)->SetRotation(CameraAzimuth);
+                    ((GameObject*)Plugin.player.Address)->SetRotation(CameraAzimuth);
                     this.moveSum -= 5f;
                 }
                 walkHook.Original(self, sumLeft, sumForward, sumTurnLeft, haveBackwardOrStrafe, a6, bAdditiveUnk);
