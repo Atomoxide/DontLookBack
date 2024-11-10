@@ -1,12 +1,15 @@
-﻿using Dalamud.Game.Command;
+using Dalamud.Game.Command;
 using Dalamud.IoC;
 using Dalamud.Plugin;
 using System.IO;
 using Dalamud.Interface.Windowing;
 using Dalamud.Plugin.Services;
-using SamplePlugin.Windows;
+using Dontlookback.Windows;
+using Dalamud.Game.ClientState.Objects.SubKinds;
+using DontLookBack;
+using FFXIVClientStructs.FFXIV.Client.Game.Object;
 
-namespace SamplePlugin;
+namespace Dontlookback;
 
 public sealed class Plugin : IDalamudPlugin
 {
@@ -14,7 +17,19 @@ public sealed class Plugin : IDalamudPlugin
     [PluginService] internal static ITextureProvider TextureProvider { get; private set; } = null!;
     [PluginService] internal static ICommandManager CommandManager { get; private set; } = null!;
 
-    private const string CommandName = "/pmycommand";
+    [PluginService] internal static IClientState ClientState { get; private set; } = null!;
+
+    public static IGameInteropProvider GameInteropProvider { get; private set; } = null!;
+
+    public static IPluginLog Logger { get; private set; } = null!;
+
+    public float currentDirection;
+
+    public bool valid;
+
+    public IPlayerCharacter? player;
+
+    private const string CommandName = "/dlb";
 
     public Configuration Configuration { get; init; }
 
@@ -22,7 +37,7 @@ public sealed class Plugin : IDalamudPlugin
     private ConfigWindow ConfigWindow { get; init; }
     private MainWindow MainWindow { get; init; }
 
-    public Plugin()
+    public Plugin(IClientState clientState, IGameInteropProvider gameInteropProvider, IPluginLog logger)
     {
         Configuration = PluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
 
@@ -48,6 +63,15 @@ public sealed class Plugin : IDalamudPlugin
 
         // Adds another button that is doing the same but for the main ui of the plugin
         PluginInterface.UiBuilder.OpenMainUi += ToggleMainUI;
+
+        ClientState = clientState;
+        GameInteropProvider = gameInteropProvider;
+        Logger = logger;
+        valid = false;
+        currentDirection = 0f;
+        player = ClientState.LocalPlayer;
+        MoveFunction.Initialize(logger, player);
+        ActionCall.Initialize(player);
     }
 
     public void Dispose()
@@ -58,12 +82,30 @@ public sealed class Plugin : IDalamudPlugin
         MainWindow.Dispose();
 
         CommandManager.RemoveHandler(CommandName);
+        ActionCall.Instance?.Dispose();
+        MoveFunction.Instance?.Dispose();
     }
 
-    private void OnCommand(string command, string args)
+    private unsafe void OnCommand(string command, string args)
     {
         // in response to the slash command, just toggle the display status of our main ui
-        ToggleMainUI();
+        
+        if (player == null)
+        {
+            Logger.Info("Player Null");
+        }
+        else
+        {
+            //GameObject* PlayerObj = (GameObject*)player.Address;
+            //Logger.Info("Player: " + (nint)PlayerObj);
+            //Logger.Info("Prev Direction: " + ActionCall.Instance.preDirection + ", Post Direction: " + ActionCall.Instance.postDirection);
+            //PlayerObj->Rotation = ActionCall.Instance.direction;
+            //MoveFunction.Instance.MoveObject(PlayerObj, (PlayerObj->Position.X)+0.1f, PlayerObj->Position.Y, PlayerObj->Position.Z);
+            //MoveFunction.Instance.Move();
+            //MoveFunction.Instance.TurnObject(PlayerObj, 0.0f);
+
+        }
+        //ToggleMainUI();
     }
 
     private void DrawUI() => WindowSystem.Draw();

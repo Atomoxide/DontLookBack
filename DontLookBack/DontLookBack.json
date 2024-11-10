@@ -1,0 +1,11 @@
+{
+    "Author": "Atomoxide",
+    "Name": "Don't Look Back",
+    "Punchline": "Don't let evil eye kill you again",
+    "Description": "Turn and face to the camera direction immediate after any actions.",
+    "ApplicableVersion": "any",
+    "Tags": [
+        "battle",
+        "plugin"
+    ]
+}
