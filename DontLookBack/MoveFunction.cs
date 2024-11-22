@@ -98,8 +98,13 @@ namespace DontLookBack
         {
             if (walkHook != null)
             {
-                *sumForward = this.moveSum;
-                if (this.moveSum > 0)
+                if (this.moveSum == 10f)
+                {
+                    *sumForward = this.moveSum;
+                    this.moveSum -= 5f;
+                }
+                //*sumForward = this.moveSum;
+                else if (this.moveSum == 5f)
                 {
                     var controlCamera = CameraManager.Instance()->GetActiveCamera();
                     var renderCamera = controlCamera != null ? controlCamera->SceneCamera.RenderCamera : null;
